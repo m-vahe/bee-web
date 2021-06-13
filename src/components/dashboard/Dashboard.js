@@ -3,7 +3,9 @@ import "./Dashboard.scss"
 import {Button, Empty} from "antd";
 import {useAuth} from "../../context/AuthContext";
 import TextEditor from "../slate/Slate";
-import {useState} from "react";
+import {useEffect, useState} from "react";
+import {useDispatch, useSelector} from "react-redux";
+import {addBlockAction, dragAndDropAction} from "../../services/redux/actions/textBlock";
 
 const initialDnDState = {
     draggedFrom: null,
@@ -14,10 +16,11 @@ const initialDnDState = {
 }
 
 const Dashboard = () => {
+    const dispatch = useDispatch()
     const {logout} = useAuth()
-    const [blocks, setBlocks] = useState([])
     const [number,setNumber] = useState(0)
     const [dragAndDrop, setDragAndDrop] = useState(initialDnDState);
+    const {textBlocks} = useSelector(state=>state.blocks)
 
     const handleLogOut = () => {
         logout()
@@ -25,7 +28,7 @@ const Dashboard = () => {
 
     const addBlocksHandler = () => {
         setNumber(number+1)
-        setBlocks([...blocks, {number:number,component:<TextEditor/>}])
+        dispatch(addBlockAction({number:number,component:<TextEditor/>}))
     }
 
     const onDragStart = (event) => {
@@ -35,7 +38,7 @@ const Dashboard = () => {
             ...dragAndDrop,
             draggedFrom: initialPosition,
             isDragging: true,
-            originalOrder: blocks
+            originalOrder: textBlocks
         });
 
         event.dataTransfer.setData("text/html", '');
@@ -70,7 +73,7 @@ const Dashboard = () => {
     }
 
     const onDrop = () => {
-        setBlocks(dragAndDrop.updatedOrder);
+        dispatch(dragAndDropAction(dragAndDrop.updatedOrder))
         setDragAndDrop({
             ...dragAndDrop,
             draggedFrom: null,
@@ -78,14 +81,16 @@ const Dashboard = () => {
             isDragging: false
         });
     }
-
+    useEffect(()=>{
+        console.log(textBlocks)
+    },[textBlocks])
     return (
         <Container>
             <h1>Dashboard</h1>
             <div className={"dashboard_body"}>
                 <Button onClick={addBlocksHandler}>Add Block</Button>
                 <div className={"dashboard_body_draggable"}>
-                    {blocks.length !== 0 ? blocks.map((e, i) => {
+                    {textBlocks.length !== 0 ? textBlocks.map((e, i) => {
                         return (
                             <div key={i} draggable={true}
                                  data-position={i}
